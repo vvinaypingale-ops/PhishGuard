@@ -1,0 +1,1124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>PhishGuard - Fake Offer &amp; Phishing Inspector</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{min-height:100%}
+body{background:#0a0f1e;font-family:'Inter',system-ui,sans-serif;color:#e2e8f0;position:relative;overflow-x:hidden}
+
+/* Animated orb background */
+.orb{position:fixed;border-radius:50%;filter:blur(80px);opacity:.15;pointer-events:none;z-index:0;animation:orb-drift 12s ease-in-out infinite alternate}
+.orb1{width:500px;height:500px;background:radial-gradient(circle,#10b981,transparent);top:-100px;left:-100px;animation-delay:0s}
+.orb2{width:400px;height:400px;background:radial-gradient(circle,#8b5cf6,transparent);bottom:-80px;right:-80px;animation-delay:-4s}
+.orb3{width:300px;height:300px;background:radial-gradient(circle,#06b6d4,transparent);top:50%;left:50%;transform:translate(-50%,-50%);animation-delay:-8s}
+@keyframes orb-drift{0%{transform:translate(0,0) scale(1)}100%{transform:translate(30px,20px) scale(1.1)}}
+.orb3{animation:orb-drift3 15s ease-in-out infinite alternate}
+@keyframes orb-drift3{0%{transform:translate(-50%,-50%) scale(1)}100%{transform:translate(-45%,-55%) scale(1.15)}}
+
+/* Grid overlay */
+.grid-bg::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(255,255,255,.018) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.018) 1px,transparent 1px);background-size:44px 44px;pointer-events:none;z-index:0}
+
+/* Glass */
+.glass{background:rgba(255,255,255,.042);backdrop-filter:blur(18px) saturate(1.5);border:1px solid rgba(255,255,255,.09)}
+.glass-s{background:rgba(255,255,255,.075);backdrop-filter:blur(22px) saturate(1.6);border:1px solid rgba(255,255,255,.13)}
+.glass-card{background:rgba(255,255,255,.035);backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,.07)}
+
+/* Gradient text */
+.gtext{background:linear-gradient(135deg,#10b981 0%,#06b6d4 50%,#8b5cf6 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+
+/* Scan button */
+.btn-glow{background:linear-gradient(135deg,#059669,#0891b2);box-shadow:0 0 24px rgba(5,150,105,.4),0 0 70px rgba(8,145,178,.18),inset 0 1px 0 rgba(255,255,255,.12);transition:all .3s ease;position:relative;overflow:hidden}
+.btn-glow::after{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(255,255,255,.07),transparent);opacity:0;transition:opacity .3s}
+.btn-glow:hover{box-shadow:0 0 36px rgba(5,150,105,.6),0 0 100px rgba(8,145,178,.3);transform:translateY(-2px)}
+.btn-glow:hover::after{opacity:1}
+.btn-glow:active{transform:translateY(0)}
+.btn-glow:disabled{opacity:.55;cursor:not-allowed;transform:none;box-shadow:none}
+
+/* Preset buttons */
+.pbtn{transition:all .25s ease;position:relative;overflow:hidden}
+.pbtn:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,0,0,.3)}
+.pbtn-r{background:rgba(239,68,68,.13);border:1px solid rgba(239,68,68,.38)}
+.pbtn-r:hover{background:rgba(239,68,68,.22);border-color:rgba(239,68,68,.6)}
+.pbtn-g{background:rgba(16,185,129,.13);border:1px solid rgba(16,185,129,.38)}
+.pbtn-g:hover{background:rgba(16,185,129,.22);border-color:rgba(16,185,129,.6)}
+.pbtn-a{background:rgba(245,158,11,.13);border:1px solid rgba(245,158,11,.38)}
+.pbtn-a:hover{background:rgba(245,158,11,.22);border-color:rgba(245,158,11,.6)}
+
+/* Gauge */
+#gauge-svg .gauge-bg{stroke:rgba(255,255,255,.07)}
+#gauge-svg .gauge-fill{stroke-linecap:round;transition:stroke-dashoffset 1.4s cubic-bezier(.4,0,.2,1),stroke .6s ease}
+
+/* Status dot */
+.sdot{width:8px;height:8px;background:#10b981;border-radius:50%;box-shadow:0 0 6px #10b981;animation:pd 2s ease-in-out infinite}
+@keyframes pd{0%,100%{opacity:1;box-shadow:0 0 6px #10b981,0 0 12px rgba(16,185,129,.4)}50%{opacity:.65;box-shadow:0 0 4px #10b981}}
+
+/* Inputs */
+textarea,input[type=text],input[type=password]{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.1);color:#e2e8f0;transition:border-color .25s ease,box-shadow .25s ease,background .25s ease}
+textarea:focus,input[type=text]:focus,input[type=password]:focus{outline:none;border-color:rgba(16,185,129,.55);box-shadow:0 0 0 3px rgba(16,185,129,.12);background:rgba(255,255,255,.05)}
+textarea::placeholder,input::placeholder{color:rgba(148,163,184,.45)}
+
+/* Spinner */
+.spinner{width:20px;height:20px;border:2.5px solid rgba(255,255,255,.25);border-top-color:#fff;border-radius:50%;animation:sp .65s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+
+/* Progress bar */
+.pbr{background:linear-gradient(90deg,#10b981,#06b6d4,#8b5cf6);animation:pb 2.5s ease-in-out infinite alternate;background-size:200% 100%}
+@keyframes pb{0%{background-position:0% 50%;opacity:.8}100%{background-position:100% 50%;opacity:1}}
+
+/* Reveal animations */
+.reveal{animation:su .65s cubic-bezier(.16,1,.3,1) both}
+.rd1{animation-delay:.08s}.rd2{animation-delay:.16s}.rd3{animation-delay:.24s}.rd4{animation-delay:.32s}
+@keyframes su{0%{transform:translateY(28px);opacity:0}100%{transform:translateY(0);opacity:1}}
+
+/* Severity badges */
+.bh{background:rgba(239,68,68,.18);color:#fca5a5;border:1px solid rgba(239,68,68,.38)}
+.bm{background:rgba(245,158,11,.18);color:#fcd34d;border:1px solid rgba(245,158,11,.38)}
+.bl{background:rgba(59,130,246,.18);color:#93c5fd;border:1px solid rgba(59,130,246,.38)}
+
+/* Card left borders */
+.ch{border-left:3px solid #ef4444}
+.cm{border-left:3px solid #f59e0b}
+.cl{border-left:3px solid #3b82f6}
+
+/* Comparison colors */
+.cgd{color:#4ade80}
+.cbd{color:#f87171}
+
+/* Filter buttons */
+.fb-on{background:rgba(255,255,255,.12);color:#f1f5f9;border:1px solid rgba(255,255,255,.18)}
+.fb-off{background:transparent;color:#64748b;border:1px solid transparent}
+.fb-off:hover{background:rgba(255,255,255,.06);color:#94a3b8}
+
+/* API key section */
+.api-sec{background:rgba(139,92,246,.07);border:1px solid rgba(139,92,246,.22)}
+
+/* Scrollbar */
+::-webkit-scrollbar{width:6px}
+::-webkit-scrollbar-track{background:rgba(255,255,255,.02)}
+::-webkit-scrollbar-thumb{background:rgba(255,255,255,.14);border-radius:4px}
+::-webkit-scrollbar-thumb:hover{background:rgba(255,255,255,.22)}
+
+/* Tooltip copy button */
+.copy-btn{transition:all .2s ease}
+.copy-btn:hover{transform:scale(1.05)}
+.copy-btn.copied{color:#10b981}
+
+/* Tag chips */
+.tag{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:10px;font-size:11px;font-weight:600;background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.22);color:#fbbf24}
+
+/* Score bar mini */
+.mini-bar{height:4px;border-radius:2px;transition:width 1s cubic-bezier(.4,0,.2,1)}
+</style>
+</head>
+<body class="grid-bg">
+
+<!-- Background orbs -->
+<div class="orb orb1" aria-hidden="true"></div>
+<div class="orb orb2" aria-hidden="true"></div>
+<div class="orb orb3" aria-hidden="true"></div>
+
+<!-- ═══════════════════════════════════════════════════════════
+     HEADER
+════════════════════════════════════════════════════════════ -->
+<header class="glass relative z-10 border-b border-white/[0.07] sticky top-0">
+<div class="max-w-6xl mx-auto px-4 sm:px-6 py-3.5 flex flex-col sm:flex-row items-center justify-between gap-3">
+  <!-- Brand -->
+  <div class="flex items-center gap-3">
+    <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-cyan-600 flex items-center justify-center shadow-lg shadow-emerald-500/30 flex-shrink-0">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+        <path d="m9 12 2 2 4-4"/>
+      </svg>
+    </div>
+    <div>
+      <h1 class="text-xl font-extrabold gtext leading-none">PhishGuard</h1>
+      <p class="text-[11px] text-slate-400 font-medium mt-0.5">AI-Powered Fake Offer &amp; Phishing Inspector</p>
+    </div>
+  </div>
+  <!-- Status chips -->
+  <div class="flex items-center gap-3 flex-wrap justify-center">
+    <div class="glass rounded-full px-3 py-1.5 flex items-center gap-2">
+      <span class="sdot flex-shrink-0"></span>
+      <span class="text-xs font-semibold text-emerald-400">AI Reasoning Engine: Active</span>
+    </div>
+    <div class="hidden sm:flex items-center gap-1.5 text-xs text-slate-500 glass rounded-full px-3 py-1.5">
+      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+      Dual-Layer Hybrid Scoring
+    </div>
+  </div>
+</div>
+</header>
+
+<!-- ═══════════════════════════════════════════════════════════
+     HERO
+════════════════════════════════════════════════════════════ -->
+<section class="relative z-10 text-center py-12 px-4">
+  <div class="inline-flex items-center gap-2 glass rounded-full px-4 py-2 text-xs font-semibold text-cyan-400 mb-6 border border-cyan-500/20 shadow-lg shadow-cyan-500/10">
+    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+    Heuristic Engine &bull; LLM Contextual Reasoning &bull; Domain Verification
+  </div>
+  <h2 class="text-3xl sm:text-5xl font-black tracking-tight mb-4 leading-tight">
+    <span class="gtext">Instantly Detect</span><br>
+    <span class="text-slate-100">Scam Offers &amp; Phishing Emails</span>
+  </h2>
+  <p class="text-slate-400 text-sm sm:text-base max-w-lg mx-auto leading-relaxed">
+    Paste any offer letter or suspicious message. Our AI explains exactly
+    <em class="text-slate-200 not-italic font-semibold">why</em> something is a scam &mdash;
+    with calibrated scoring that won&apos;t cry wolf on legitimate offers.
+  </p>
+  <!-- Stats row -->
+  <div class="flex flex-wrap items-center justify-center gap-6 mt-8 text-xs text-slate-500">
+    <div class="flex items-center gap-1.5"><span class="text-emerald-400 font-bold text-sm">15+</span> Fraud Patterns Detected</div>
+    <div class="w-px h-4 bg-white/10"></div>
+    <div class="flex items-center gap-1.5"><span class="text-cyan-400 font-bold text-sm">0–100</span> Calibrated Risk Score</div>
+    <div class="w-px h-4 bg-white/10"></div>
+    <div class="flex items-center gap-1.5"><span class="text-violet-400 font-bold text-sm">Gemini</span> AI Reasoning Layer</div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════
+     MAIN CONTENT
+════════════════════════════════════════════════════════════ -->
+<main class="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 pb-20 space-y-5">
+
+<!-- PRESET BAR -->
+<div class="glass rounded-2xl p-4 sm:p-5">
+  <div class="flex items-center gap-2 mb-3">
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#06b6d4" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+    <p class="text-xs font-bold uppercase tracking-widest text-slate-400">Quick Demo Presets — Click to load instantly</p>
+  </div>
+  <div class="flex flex-wrap gap-3">
+    <button onclick="loadPreset('scam')" class="pbtn pbtn-r rounded-xl px-4 py-2.5 text-sm font-semibold text-red-300 flex items-center gap-2 cursor-pointer">
+      &#128308; Load Scam Offer
+      <span class="text-[11px] font-normal opacity-60">Equipment deposit scam</span>
+    </button>
+    <button onclick="loadPreset('legit')" class="pbtn pbtn-g rounded-xl px-4 py-2.5 text-sm font-semibold text-emerald-300 flex items-center gap-2 cursor-pointer">
+      &#128994; Load Legitimate Offer
+      <span class="text-[11px] font-normal opacity-60">Corporate HR letter</span>
+    </button>
+    <button onclick="loadPreset('borderline')" class="pbtn pbtn-a rounded-xl px-4 py-2.5 text-sm font-semibold text-amber-300 flex items-center gap-2 cursor-pointer">
+      &#128993; Load Borderline Offer
+      <span class="text-[11px] font-normal opacity-60">Ambiguous remote gig</span>
+    </button>
+  </div>
+</div>
+
+<!-- INPUT FORM -->
+<div class="glass-s rounded-2xl p-6 space-y-5">
+  <div class="flex items-center gap-2">
+    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+    <h3 class="text-sm font-bold text-slate-100">Paste Offer Letter or Email Content</h3>
+  </div>
+  <textarea id="offerText" rows="10"
+    placeholder="Paste the full text of the offer letter, job email, or suspicious message here...&#10;&#10;Example: 'Congratulations! You have been selected for a remote data entry position paying $85/hr. No interview required. Deposit our check and send $500 back via gift card to reserve your equipment...'"
+    class="w-full rounded-xl p-4 text-sm leading-relaxed font-mono resize-y"
+    style="min-height:200px"></textarea>
+
+  <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+    <div>
+      <label class="block text-xs font-semibold text-slate-400 mb-1.5 flex items-center gap-1.5">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,12 2,6"/></svg>
+        Sender Email <span class="text-slate-600 font-normal ml-1">optional</span>
+      </label>
+      <input id="senderEmail" type="text" placeholder="e.g. hr@job-google.net or recruiter@gmail.com" class="w-full rounded-xl px-4 py-2.5 text-sm"/>
+    </div>
+    <div>
+      <label class="block text-xs font-semibold text-slate-400 mb-1.5 flex items-center gap-1.5">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+        Company URL <span class="text-slate-600 font-normal ml-1">optional</span>
+      </label>
+      <input id="companyUrl" type="text" placeholder="e.g. https://acme.com or careers.app1e.io" class="w-full rounded-xl px-4 py-2.5 text-sm"/>
+    </div>
+  </div>
+
+  <div class="api-sec rounded-xl p-4 space-y-2">
+    <label class="flex items-center gap-1.5 text-xs font-bold text-violet-300">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>
+      Google Gemini API Key
+      <span class="font-normal text-violet-500 ml-1">optional — unlocks full AI reasoning</span>
+    </label>
+    <input id="apiKey" type="password" placeholder="AIza..." class="w-full rounded-lg px-3 py-2 text-sm"/>
+    <p class="text-xs text-slate-500">Without a key the fast heuristic engine still gives a reliable risk score. Get a free key at <a href="https://aistudio.google.com" target="_blank" class="text-violet-400 underline decoration-dotted">aistudio.google.com</a></p>
+  </div>
+
+  <button id="scanBtn" onclick="runScan()"
+    class="btn-glow w-full rounded-xl py-4 text-base font-bold text-white flex items-center justify-center gap-2.5 cursor-pointer">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+    &#9889; Scan for Threat Risk
+  </button>
+</div>
+
+<!-- LOADING STATE -->
+<div id="loadingSection" class="hidden glass-s rounded-2xl p-8">
+  <div class="flex flex-col items-center gap-5">
+    <div class="relative w-20 h-20">
+      <div class="absolute inset-0 rounded-full border-4 border-emerald-500/15"></div>
+      <div class="absolute inset-0 rounded-full border-4 border-t-emerald-400 border-r-transparent border-b-transparent border-l-transparent animate-spin"></div>
+      <div class="absolute inset-2 rounded-full border-3 border-t-cyan-400 border-r-transparent border-b-transparent border-l-transparent animate-spin" style="animation-direction:reverse;animation-duration:0.85s;border-width:2.5px"></div>
+      <div class="absolute inset-4 rounded-full border-2 border-t-violet-400 border-r-transparent border-b-transparent border-l-transparent animate-spin" style="animation-duration:1.4s"></div>
+    </div>
+    <div class="text-center space-y-1">
+      <p class="font-bold text-slate-100 text-lg" id="loadingTitle">Scanning Document...</p>
+      <p class="text-sm text-slate-400" id="loadingSubtitle">Running heuristic pattern engine</p>
+    </div>
+    <div class="w-full max-w-sm space-y-2">
+      <div class="flex justify-between text-xs text-slate-500">
+        <span id="loadingStep">Step 1 of 3</span>
+        <span id="loadingPct">33%</span>
+      </div>
+      <div class="bg-white/5 rounded-full h-1.5 overflow-hidden">
+        <div id="loadingBar" class="pbr h-full rounded-full transition-all duration-500" style="width:33%"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════
+     RESULTS DASHBOARD
+════════════════════════════════════════════════════════════ -->
+<div id="resultsSection" class="hidden space-y-5">
+
+  <!-- Row 1: Gauge + Summary -->
+  <div class="grid grid-cols-1 md:grid-cols-5 gap-5 reveal">
+    <!-- Gauge -->
+    <div class="md:col-span-2 glass-s rounded-2xl p-6 flex flex-col items-center gap-4">
+      <div class="flex items-center justify-between w-full">
+        <p class="text-[10px] font-bold uppercase tracking-widest text-slate-500">Threat Index</p>
+        <button id="copyResultsBtn" onclick="copyResults()" class="copy-btn glass rounded-lg px-2.5 py-1.5 text-[10px] font-semibold text-slate-400 flex items-center gap-1.5 hover:text-slate-200">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          Copy Report
+        </button>
+      </div>
+      <!-- SVG Gauge -->
+      <div class="relative w-52 h-52">
+        <svg id="gauge-svg" viewBox="0 0 200 200" class="w-full h-full" style="transform:rotate(-90deg)">
+          <defs>
+            <linearGradient id="gaugeGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" stop-color="#10b981"/>
+              <stop offset="50%" stop-color="#f59e0b"/>
+              <stop offset="100%" stop-color="#ef4444"/>
+            </linearGradient>
+          </defs>
+          <circle class="gauge-bg" cx="100" cy="100" r="78" fill="none" stroke-width="14"/>
+          <circle id="gauge-fill" class="gauge-fill" cx="100" cy="100" r="78" fill="none" stroke-width="14"
+            stroke="#10b981" stroke-dasharray="490" stroke-dashoffset="490"/>
+        </svg>
+        <div class="absolute inset-0 flex flex-col items-center justify-center">
+          <span id="gaugeScore" class="text-5xl font-black text-white">0%</span>
+          <span id="gaugeLabel" class="text-[11px] font-bold uppercase tracking-widest text-slate-400 mt-1">Scanning...</span>
+        </div>
+      </div>
+      <!-- Risk badge -->
+      <div id="riskBadge" class="rounded-2xl px-6 py-2.5 text-sm font-bold w-full text-center"></div>
+      <!-- Score breakdown -->
+      <div class="w-full glass rounded-xl p-3.5 space-y-2.5 text-xs">
+        <div class="flex items-center justify-between">
+          <span class="text-slate-500">Heuristic Base Score</span>
+          <div class="flex items-center gap-2">
+            <div class="w-16 bg-white/5 rounded-full h-1 overflow-hidden"><div id="hBarEl" class="mini-bar bg-gradient-to-r from-emerald-500 to-amber-500" style="width:0%"></div></div>
+            <span id="heuristicScoreLabel" class="font-bold text-slate-300 w-8 text-right">--</span>
+          </div>
+        </div>
+        <div class="flex items-center justify-between">
+          <span class="text-slate-500">LLM Adjustment</span>
+          <span id="llmAdjLabel" class="font-bold text-slate-300">--</span>
+        </div>
+        <div class="border-t border-white/[0.07] pt-2.5 flex items-center justify-between">
+          <span class="text-slate-300 font-semibold">Final Score</span>
+          <span id="finalScoreLabel" class="font-black text-white text-sm">--</span>
+        </div>
+      </div>
+      <!-- Fallback notice -->
+      <div id="fallbackNotice" class="hidden w-full rounded-xl p-2.5 text-xs text-amber-400 flex items-center gap-2" style="background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.2)">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="flex-shrink-0"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/></svg>
+        <span>Running in heuristic-only mode. Add a Gemini API key for deeper analysis.</span>
+      </div>
+    </div>
+
+    <!-- Executive Summary + Domain -->
+    <div class="md:col-span-3 glass-s rounded-2xl p-5 flex flex-col gap-4">
+      <div class="flex items-center gap-2">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+        <h3 class="text-sm font-bold text-slate-100">AI Executive Summary</h3>
+        <span id="summaryBadge" class="hidden ml-auto text-[10px] font-bold px-2 py-0.5 rounded-full bg-violet-500/20 text-violet-300 border border-violet-500/30">Gemini Powered</span>
+      </div>
+      <div class="glass-card rounded-xl p-4 flex-1">
+        <p id="executiveSummary" class="text-slate-300 text-sm leading-relaxed italic">Awaiting analysis...</p>
+      </div>
+      <!-- Domain Analysis -->
+      <div>
+        <div class="flex items-center gap-1.5 mb-2">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#06b6d4" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+          <span class="text-[10px] font-bold uppercase tracking-widest text-slate-500">Domain &amp; Sender Verification</span>
+        </div>
+        <div id="domainResults" class="space-y-2 text-xs text-slate-300"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Row 2: Red Flags -->
+  <div class="glass-s rounded-2xl p-6 reveal rd1">
+    <div class="flex flex-wrap items-center justify-between gap-3 mb-5">
+      <div class="flex items-center gap-2">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2.2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        <h3 class="text-sm font-bold text-slate-100">Detected Red Flags</h3>
+        <span id="flagCount" class="text-[11px] font-bold px-2 py-0.5 rounded-full bg-red-500/15 text-red-400 border border-red-500/25">0</span>
+      </div>
+      <!-- Category filters -->
+      <div class="flex gap-1.5 flex-wrap">
+        <button onclick="filterFlags('all')" class="filter-btn fb-on text-[11px] px-3 py-1.5 rounded-lg font-semibold transition-all" data-cat="all">All</button>
+        <button onclick="filterFlags('Payment/Financial')" class="filter-btn fb-off text-[11px] px-3 py-1.5 rounded-lg font-medium transition-all" data-cat="Payment/Financial">&#128179; Financial</button>
+        <button onclick="filterFlags('Urgency/Tone')" class="filter-btn fb-off text-[11px] px-3 py-1.5 rounded-lg font-medium transition-all" data-cat="Urgency/Tone">&#8987; Urgency</button>
+        <button onclick="filterFlags('Identity/Domain')" class="filter-btn fb-off text-[11px] px-3 py-1.5 rounded-lg font-medium transition-all" data-cat="Identity/Domain">&#127760; Identity</button>
+        <button onclick="filterFlags('Process/Structure')" class="filter-btn fb-off text-[11px] px-3 py-1.5 rounded-lg font-medium transition-all" data-cat="Process/Structure">&#128203; Process</button>
+      </div>
+    </div>
+    <div id="flagsGrid" class="grid grid-cols-1 sm:grid-cols-2 gap-3"></div>
+    <p id="noFlags" class="hidden text-center text-slate-500 text-sm py-8 italic">No red flags detected in this category.</p>
+  </div>
+
+  <!-- Row 3: Missing Elements -->
+  <div id="missingSection" class="glass rounded-2xl p-5 reveal rd2">
+    <div class="flex items-center gap-2 mb-4">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+      <h3 class="text-sm font-bold text-slate-100">Missing Legitimate Elements</h3>
+      <span class="text-[11px] text-slate-500 ml-auto">Elements expected in a real offer letter but absent here</span>
+    </div>
+    <div id="missingGrid" class="flex flex-wrap gap-2"></div>
+  </div>
+
+  <!-- Row 4: Side-by-Side Comparison -->
+  <div class="glass-s rounded-2xl p-6 reveal rd3">
+    <div class="flex items-center gap-2 mb-5">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#8b5cf6" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="12" y1="3" x2="12" y2="21"/></svg>
+      <h3 class="text-sm font-bold text-slate-100">Legitimacy Comparison Baseline</h3>
+    </div>
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <!-- This document -->
+      <div class="glass-card rounded-xl p-4">
+        <div class="flex items-center gap-2 mb-3">
+          <div class="w-5 h-5 rounded-full bg-red-500/20 flex items-center justify-center flex-shrink-0">
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="3"><path d="M18 6L6 18M6 6l12 12"/></svg>
+          </div>
+          <p class="text-[11px] font-bold uppercase tracking-widest text-red-400">This Document</p>
+        </div>
+        <ul id="anomalyList" class="space-y-2 text-sm"></ul>
+      </div>
+      <!-- Legitimate baseline -->
+      <div class="glass-card rounded-xl p-4">
+        <div class="flex items-center gap-2 mb-3">
+          <div class="w-5 h-5 rounded-full bg-emerald-500/20 flex items-center justify-center flex-shrink-0">
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+          </div>
+          <p class="text-[11px] font-bold uppercase tracking-widest text-emerald-400">Standard Legitimate Offer</p>
+        </div>
+        <ul class="space-y-2 text-sm text-slate-300">
+          <li class="flex items-start gap-2"><span class="cgd flex-shrink-0 mt-0.5">&#10003;</span>Official company-domain email (hr@company.com)</li>
+          <li class="flex items-start gap-2"><span class="cgd flex-shrink-0 mt-0.5">&#10003;</span>Named HR contact with verifiable direct phone</li>
+          <li class="flex items-start gap-2"><span class="cgd flex-shrink-0 mt-0.5">&#10003;</span>Formal job title with specific role responsibilities</li>
+          <li class="flex items-start gap-2"><span class="cgd flex-shrink-0 mt-0.5">&#10003;</span>Salary structure with pay schedule and benefits</li>
+          <li class="flex items-start gap-2"><span class="cgd flex-shrink-0 mt-0.5">&#10003;</span>DocuSign or official HR portal for signing</li>
+          <li class="flex items-start gap-2"><span class="cgd flex-shrink-0 mt-0.5">&#10003;</span>Zero upfront payment requests from candidate</li>
+          <li class="flex items-start gap-2"><span class="cgd flex-shrink-0 mt-0.5">&#10003;</span>References a prior interview or screening process</li>
+          <li class="flex items-start gap-2"><span class="cgd flex-shrink-0 mt-0.5">&#10003;</span>Clear start date with onboarding timeline</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- Row 5: Actions -->
+  <div class="glass-s rounded-2xl p-6 reveal rd4">
+    <div class="flex items-center gap-2 mb-5">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#06b6d4" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+      <h3 class="text-sm font-bold text-slate-100">Recommended Actions</h3>
+    </div>
+    <div id="actionGrid" class="grid grid-cols-1 sm:grid-cols-3 gap-3"></div>
+  </div>
+
+</div><!-- /resultsSection -->
+</main>
+
+<!-- FOOTER -->
+<footer class="relative z-10 border-t border-white/[0.05] py-6 text-center text-xs text-slate-600">
+  <div class="flex flex-wrap items-center justify-center gap-4">
+    <span class="flex items-center gap-1.5">
+      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+      PhishGuard Hackathon MVP
+    </span>
+    <span class="text-slate-700">&bull;</span>
+    <span>Dual-Layer Hybrid AI &mdash; Heuristic + Gemini 2.0 Flash</span>
+    <span class="text-slate-700">&bull;</span>
+    <span>Not a substitute for professional legal or security advice</span>
+  </div>
+</footer>
+
+<!-- ═══════════════════════════════════════════════════════════
+     JAVASCRIPT
+════════════════════════════════════════════════════════════ -->
+<script>
+'use strict';
+
+// ──────────────────────────────────────────────────────────────
+// PRESET DATA (Calibration Test Cases)
+// ──────────────────────────────────────────────────────────────
+const PRESETS = {
+  scam: {
+    text: `CONGRATULATIONS! You Have Been Selected!
+
+We are excited to inform you that you have been selected for the position of Remote Data Entry Specialist at Digital Solutions Inc.
+
+This is a WORK FROM HOME position paying $85/hr with no experience required.
+
+TO GET STARTED IMMEDIATELY:
+We will mail you a company check for $2,500 to purchase your home office equipment from our approved vendor list. Once you receive the check, you must deposit it and IMMEDIATELY send $500 via Zelle or gift card (Amazon/Google Play) to our equipment coordinator to reserve your workstation kit. This must be done within 24 hours or your position will be forfeited.
+
+No formal interview is required. You have already been pre-screened via LinkedIn.
+
+URGENT: Reply to this email IMMEDIATELY with your full name, home address, and bank account details so we can process your paperwork and mail the check today. Do not delay — we have 3 other candidates waiting.
+
+Contact: hr.digitalsolutions@gmail.com`,
+    email: 'hr.digitalsolutions@gmail.com',
+    url: ''
+  },
+  legit: {
+    text: `Dear Ms. Johnson,
+
+We are delighted to extend an offer of employment for the position of Software Engineer II at Acme Corporation.
+
+Position Details:
+- Title: Software Engineer II (Full-time, Exempt)
+- Department: Platform Engineering
+- Start Date: October 14, 2026
+- Annual Base Salary: $95,000, paid bi-weekly
+- Reporting Manager: David Chen, Engineering Manager
+
+Benefits Summary:
+- Comprehensive health, dental, and vision insurance (effective Day 1)
+- 401(k) with 4% company match
+- 20 days PTO + 10 federal holidays
+- $2,500 annual learning and development stipend
+- Flexible hybrid schedule (3 days in office, 2 remote)
+
+This offer is contingent upon successful completion of a standard background check and reference verification, which our People Operations team will initiate separately.
+
+Please review your formal offer packet and sign via our DocuSign portal by Friday, September 26th. If you have any questions, contact our HR Business Partner:
+
+Sarah Mitchell, SHRM-CP
+Senior HR Business Partner
+sarah.mitchell@acme.com | Direct: (415) 555-0192
+Office: 350 Market Street, San Francisco, CA 94105
+
+We look forward to welcoming you to the Acme team!
+
+Sincerely,
+David Chen, Engineering Manager
+Acme Corporation | acme.com`,
+    email: 'sarah.mitchell@acme.com',
+    url: 'https://acme.com'
+  },
+  borderline: {
+    text: `URGENT HIRING — Online Product Reviewers Needed!
+
+We are looking for motivated individuals to work from home reviewing products on major e-commerce platforms.
+
+Position: Online Product Reviewer / Evaluator
+Pay: $50/hour | Work just 2-3 hours per day
+Start: Immediately | No interview required
+
+What you'll do:
+- Browse and rate products on Amazon, Walmart, eBay
+- Submit short written reviews from your phone or computer
+- Receive payment weekly via PayPal or Venmo
+
+Requirements: Must have a smartphone and internet access. No experience necessary.
+
+TO APPLY: Click the Telegram link below and message us with INTERESTED:
+t.me/ProductReviewerJobs2026
+
+Spots are filling up fast! We only have 12 openings remaining this week.`,
+    email: '',
+    url: 't.me/ProductReviewerJobs2026'
+  }
+};
+
+function loadPreset(type) {
+  const p = PRESETS[type];
+  if (!p) return;
+  document.getElementById('offerText').value = p.text;
+  document.getElementById('senderEmail').value = p.email;
+  document.getElementById('companyUrl').value = p.url;
+  document.getElementById('offerText').scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+// ──────────────────────────────────────────────────────────────
+// MODULE 2: HEURISTIC ENGINE
+// ──────────────────────────────────────────────────────────────
+function analyzeHeuristics(text) {
+  let score = 0;
+  const triggers = [];
+
+  const rules = [
+    // ── Payment / Financial (weight 25) ─────────────────────
+    {
+      p: /(\$\d[\d,]*|\bcheck\b).{0,80}(zelle|venmo|cash\s?app|western union|wire transfer|moneygram|bitcoin|crypto|gift card|amazon card|google play card|apple card|itunes card)/i,
+      cat: 'Payment/Financial', sev: 'high', w: 25,
+      label: 'Payment via untraceable method',
+      exp: 'Requests money via gift cards, Zelle, wire transfer, or cryptocurrency — the universal hallmark of advance-fee fraud. Legitimate employers never ask candidates to send money.'
+    },
+    {
+      p: /deposit.{0,30}check|check.{0,30}deposit|mail.{0,20}check/i,
+      cat: 'Payment/Financial', sev: 'high', w: 25,
+      label: 'Check deposit / bounce scheme',
+      exp: 'Mailing a check then asking you to send money back is the textbook advance-fee scam. The check will bounce days later, leaving you personally liable for the full amount wired.'
+    },
+    {
+      p: /upfront cost|advance fee|pay first|send.{0,15}money|wire.{0,15}funds|transfer.{0,10}fund/i,
+      cat: 'Payment/Financial', sev: 'high', w: 25,
+      label: 'Upfront payment demand',
+      exp: 'Requiring payment from a job candidate before starting work is a defining fraud indicator. No legitimate employer ever collects fees from a new hire.'
+    },
+    {
+      p: /equipment.{0,25}purchase|buy.{0,20}equipment|approved vendor|home office kit|workstation kit/i,
+      cat: 'Payment/Financial', sev: 'high', w: 25,
+      label: 'Equipment purchase via company check',
+      exp: 'Directing you to buy equipment using a mailed company check is a well-documented scam. You purchase from a fake vendor; the original check bounces; you bear full liability.'
+    },
+    {
+      p: /gift card|itunes|google play card|amazon gift card/i,
+      cat: 'Payment/Financial', sev: 'high', w: 25,
+      label: 'Gift card specified as payment method',
+      exp: 'Requesting payment in gift cards is the FTC\'s #1 reported fraud payment method for five consecutive years. This is an unambiguous scam signal.'
+    },
+    // ── Urgency / Tone (weight 15) ───────────────────────────
+    {
+      p: /within 24 hours|respond immediately|act now|don.t delay|do not delay|limited spots|filling.{0,8}fast|reply.{0,8}(now|asap|today|immediately)/i,
+      cat: 'Urgency/Tone', sev: 'medium', w: 15,
+      label: 'Artificial urgency and pressure tactics',
+      exp: 'Manufactured time pressure prevents you from researching the offer. This is a textbook social engineering technique designed to override rational decision-making through fear of missing out.'
+    },
+    {
+      p: /must respond|today only|last chance|final notice|position forfeited|position cancelled/i,
+      cat: 'Urgency/Tone', sev: 'medium', w: 15,
+      label: 'Coercive deadline language',
+      exp: 'Legitimate employers provide 3–7 business days to consider an offer. Threatening immediate cancellation is a high-pressure manipulation tactic with no legitimate business justification.'
+    },
+    {
+      p: /other candidates waiting|competing candidates|position.{0,20}(forfeited|given away)|only.{0,10}(opening|spot)/i,
+      cat: 'Urgency/Tone', sev: 'medium', w: 15,
+      label: 'False scarcity and competition manipulation',
+      exp: 'Claiming multiple candidates are competing for the same position is a social engineering tactic designed to bypass critical thinking by triggering competitive instincts.'
+    },
+    // ── Identity / Domain (weight 20) ───────────────────────
+    {
+      p: /@gmail\.com|@yahoo\.com|@hotmail\.com|@outlook\.com/i,
+      cat: 'Identity/Domain', sev: 'high', w: 20,
+      label: 'Free email domain used as corporate HR contact',
+      exp: 'All legitimate corporate HR departments use company-domain email addresses (hr@company.com). Using Gmail or Yahoo for official hiring communications is a definitive fraud indicator.'
+    },
+    {
+      p: /no interview.{0,20}(required|needed)|no formal interview|pre.?screened|pre.?approved|already selected.*linkedin/i,
+      cat: 'Identity/Domain', sev: 'high', w: 20,
+      label: 'No formal interview or screening process',
+      exp: 'Claiming there is no interview or that you have already been pre-screened without your knowledge is a red flag. Every legitimate employer conducts screening to verify candidate qualifications.'
+    },
+    {
+      p: /telegram|t\.me\/|whatsapp|discord.*job|instagram.*hire/i,
+      cat: 'Identity/Domain', sev: 'high', w: 20,
+      label: 'Unofficial messaging app used for hiring',
+      exp: 'Professional recruitment uses official email and HR platforms. Directing candidates to Telegram or WhatsApp is a major red flag — these platforms have no record-keeping accountability.'
+    },
+    // ── Pay / Effort Ratio (weight 12) ──────────────────────
+    {
+      p: /\$(50|55|60|65|70|75|80|85|90|95|100|105|110|120)[\s\/]*(per hour|\/hr|\/hour|per hr).{0,80}no experience|no experience.{0,80}\$(50|55|60|65|70|75|80|85|90|95|100)[\s\/]*(per hour|\/hr|\/hour|per hr)/i,
+      cat: 'Payment/Financial', sev: 'medium', w: 12,
+      label: 'Implausibly high pay with no experience requirement',
+      exp: 'Combining a high hourly rate with a zero-experience requirement is a deliberate bait tactic. It exploits financial need to lower critical thinking before the fraudulent request is revealed.'
+    },
+    // ── Process / Structure (weight 10) ─────────────────────
+    {
+      p: /bank account.{0,15}(number|details|info)|social security number|ssn|routing number/i,
+      cat: 'Process/Structure', sev: 'high', w: 10,
+      label: 'Premature financial / personal data request',
+      exp: 'Requesting bank account numbers or SSN before a formal signed offer, background check, and onboarding packet is identity theft and financial data harvesting.'
+    },
+    {
+      p: /no experience (required|needed)|no skills (needed|required)|anyone can (do|apply|qualify)/i,
+      cat: 'Process/Structure', sev: 'low', w: 10,
+      label: 'Absent qualification requirements',
+      exp: 'Legitimate positions list specific skill requirements. Advertising high pay with zero qualifications is a scam bait pattern targeting financially vulnerable job seekers.'
+    },
+    {
+      p: /congratulations.{0,60}(selected|chosen|hired|approved|offered)/i,
+      cat: 'Process/Structure', sev: 'medium', w: 10,
+      label: 'Unsolicited selection notification',
+      exp: '"Congratulations, you have been selected!" without a prior application exploits flattery and surprise to lower your defenses before presenting the fraudulent request.'
+    },
+  ];
+
+  for (const rule of rules) {
+    if (rule.p.test(text)) {
+      score += rule.w;
+      triggers.push({ category: rule.cat, label: rule.label, explanation: rule.exp, severity: rule.sev });
+    }
+  }
+
+  return { rawHeuristicScore: Math.min(100, score), triggers };
+}
+
+// ──────────────────────────────────────────────────────────────
+// MODULE 4: DOMAIN VERIFICATION
+// ──────────────────────────────────────────────────────────────
+function analyzeDomain(senderEmail, companyUrl) {
+  const results = [];
+  const FREE = ['gmail.com','yahoo.com','hotmail.com','outlook.com','aol.com','icloud.com','protonmail.com','mail.com','ymail.com','zoho.com'];
+  const BRANDS = ['google','amazon','microsoft','apple','facebook','meta','netflix','adobe','salesforce','tesla','twitter','linkedin','deloitte','accenture','ibm','oracle','jpmorgan','citibank','paypal'];
+
+  function extractDomain(s) {
+    s = s.trim().toLowerCase().replace(/https?:\/\//,'').split('/')[0];
+    const em = s.match(/@([a-z0-9.\-]+)/);
+    if (em) return em[1];
+    const um = s.match(/^([a-z0-9.\-]+\.[a-z]{2,})/);
+    return um ? um[1] : s;
+  }
+
+  function levenshtein(a, b) {
+    if (a === b) return 0;
+    const m = a.length, n = b.length;
+    const dp = Array.from({length:m+1}, (_,i) => Array.from({length:n+1}, (_,j) => i===0?j:j===0?i:0));
+    for (let i=1;i<=m;i++) for (let j=1;j<=n;j++)
+      dp[i][j] = a[i-1]===b[j-1] ? dp[i-1][j-1] : 1+Math.min(dp[i-1][j], dp[i][j-1], dp[i-1][j-1]);
+    return dp[m][n];
+  }
+
+  function check(raw, label) {
+    if (!raw || !raw.trim()) return;
+    const domain = extractDomain(raw);
+    if (!domain || domain.length < 3) return;
+    const base = domain.split('.')[0];
+
+    if (/t\.me|telegram\.me|wa\.me|whatsapp/.test(domain)) {
+      results.push({icon:'&#128308;', text:`${label}: <strong class="text-red-400">${domain}</strong> &mdash; Messaging platform used as employer contact. <strong class="text-red-400">Critically suspicious.</strong>`, risk:'high'});
+      return;
+    }
+    if (FREE.includes(domain)) {
+      results.push({icon:'&#128308;', text:`${label}: <strong class="text-red-400">${domain}</strong> &mdash; Free consumer email provider. Real HR departments use corporate-domain email (hr@company.com).`, risk:'high'});
+      return;
+    }
+    // Typosquatting check
+    let best = null, bestD = 999;
+    for (const b of BRANDS) { const d = levenshtein(base, b); if (d < bestD) { bestD = d; best = b; } }
+    if (bestD > 0 && bestD <= 2 && base !== best) {
+      results.push({icon:'&#128308;', text:`${label}: <strong class="text-red-400">${domain}</strong> &mdash; Likely typosquatting of <strong>${best}.com</strong> (edit distance: ${bestD}). Do NOT trust this domain.`, risk:'high'});
+      return;
+    }
+    // Keyword-hyphen pattern (job-google.com, amazon-hr.net, etc.)
+    if (/[-_](hr|jobs|careers|work|hiring|recruit|corp|inc|group|online|remote|apply)/.test(domain) ||
+        /(hr|jobs|careers|hiring)[-_]/.test(domain)) {
+      results.push({icon:'&#128993;', text:`${label}: <strong class="text-amber-400">${domain}</strong> &mdash; Suspicious keyword-hyphenated domain pattern. Legitimate companies rarely use these constructs.`, risk:'medium'});
+      return;
+    }
+    results.push({icon:'&#128994;', text:`${label}: <strong class="text-emerald-400">${domain}</strong> &mdash; Domain pattern looks standard. Always verify independently via the company's official website.`, risk:'low'});
+  }
+
+  if (senderEmail) check(senderEmail, 'Sender Email');
+  if (companyUrl)  check(companyUrl, 'Company URL');
+  if (!senderEmail && !companyUrl)
+    results.push({icon:'&#9898;', text:'No sender email or URL provided — domain analysis skipped.', risk:'none'});
+  return results;
+}
+
+// ──────────────────────────────────────────────────────────────
+// MODULE 3: GEMINI LLM REASONING
+// ──────────────────────────────────────────────────────────────
+async function callGemini(text, email, url, key) {
+  const SYSTEM = `You are an elite cyber-fraud analyst specializing in recruitment scams and social engineering. Analyze the document for manipulation tactics, payment fraud, urgency coercion, identity deception, and deviations from legitimate hiring norms.
+
+Return ONLY valid JSON — no markdown fences, no preamble, no explanation outside the JSON:
+{"llm_adjustment":<integer -20 to +20>,"overall_assessment":"<1-2 sentence executive summary>","risk_factors":[{"category":"<Payment/Financial|Urgency/Tone|Identity/Domain|Process/Structure>","explanation":"<detailed plain-language analysis>","severity":"<high|medium|low>"}],"missing_legitimate_elements":["<element>"]}
+
+Calibration:
+- Scam indicators (gift cards, check deposit trick, upfront fees, equipment purchase, Telegram, no interview): llm_adjustment +15 to +20
+- Standard corporate offer (company domain email, DocuSign, benefits, named HR, contingent on background check): llm_adjustment -15 to -20
+- Borderline / ambiguous: llm_adjustment 0 to +8
+- For legitimate offers, risk_factors MUST be empty or contain only 1-2 low-severity items about minor omissions
+- NEVER flag standard corporate HR language, background checks, or DocuSign as suspicious`;
+
+  const USER = `DOCUMENT TO ANALYZE:\n---\n${text}\n---\nSender Email: ${email||'Not provided'}\nCompany URL: ${url||'Not provided'}`;
+
+  const resp = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${key}`,
+    {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        system_instruction: {parts:[{text:SYSTEM}]},
+        contents: [{parts:[{text:USER}]}],
+        generationConfig: {temperature:0.12, maxOutputTokens:1400, responseMimeType:'application/json'}
+      })
+    }
+  );
+
+  if (!resp.ok) {
+    const e = await resp.json().catch(() => ({}));
+    throw new Error(e?.error?.message || `API error ${resp.status}`);
+  }
+  const data = await resp.json();
+  const raw = (data?.candidates?.[0]?.content?.parts?.[0]?.text || '')
+    .replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '').trim();
+  return JSON.parse(raw);
+}
+
+// ──────────────────────────────────────────────────────────────
+// GAUGE ANIMATION
+// ──────────────────────────────────────────────────────────────
+function animateGauge(score) {
+  const circumference = 490;
+  const fill = document.getElementById('gauge-fill');
+  fill.setAttribute('stroke-dashoffset', String(circumference - (score / 100) * circumference));
+
+  let color, label, bCls, bTxt;
+  if (score <= 30) {
+    color = '#10b981'; label = 'LOW RISK';
+    bCls = 'bg-emerald-500/15 text-emerald-300 border border-emerald-500/35';
+    bTxt = '&#10003;&nbsp; LOW RISK &mdash; Likely Legitimate';
+  } else if (score <= 65) {
+    color = '#f59e0b'; label = 'MODERATE RISK';
+    bCls = 'bg-amber-500/15 text-amber-300 border border-amber-500/35';
+    bTxt = '&#9888;&nbsp; MODERATE RISK &mdash; Verify Carefully';
+  } else {
+    color = '#ef4444'; label = 'HIGH RISK';
+    bCls = 'bg-red-500/15 text-red-300 border border-red-500/35';
+    bTxt = '&#128680;&nbsp; HIGH RISK &mdash; Scam Detected';
+  }
+
+  fill.setAttribute('stroke', color);
+  const scoreEl = document.getElementById('gaugeScore');
+  const labelEl = document.getElementById('gaugeLabel');
+  labelEl.textContent = label;
+  labelEl.style.color = color;
+
+  // Animated counter
+  let cur = 0;
+  const step = score / 45;
+  const timer = setInterval(() => {
+    cur = Math.min(cur + step, score);
+    scoreEl.textContent = Math.round(cur) + '%';
+    scoreEl.style.color = color;
+    if (cur >= score) clearInterval(timer);
+  }, 25);
+
+  const badge = document.getElementById('riskBadge');
+  badge.className = `rounded-2xl px-6 py-2.5 text-sm font-bold w-full text-center ${bCls}`;
+  badge.innerHTML = bTxt;
+}
+
+// ──────────────────────────────────────────────────────────────
+// RENDER HELPERS
+// ──────────────────────────────────────────────────────────────
+let allFlags = [];
+let lastResult = {};
+
+function renderFlags(flags) {
+  allFlags = flags;
+  document.getElementById('flagCount').textContent = flags.length;
+  renderFilteredFlags('all');
+}
+
+function renderFilteredFlags(cat) {
+  document.querySelectorAll('.filter-btn').forEach(b => {
+    const active = b.dataset.cat === cat;
+    b.className = `filter-btn ${active ? 'fb-on' : 'fb-off'} text-[11px] px-3 py-1.5 rounded-lg font-${active ? 'semibold' : 'medium'} transition-all`;
+  });
+
+  const filtered = cat === 'all' ? allFlags : allFlags.filter(f => f.category === cat);
+  const grid = document.getElementById('flagsGrid');
+  const noEl = document.getElementById('noFlags');
+
+  if (!filtered.length) { grid.innerHTML = ''; noEl.classList.remove('hidden'); return; }
+  noEl.classList.add('hidden');
+
+  const sevMap = {
+    high:   {badge:'&#128308; High',   cls:'bh', border:'ch'},
+    medium: {badge:'&#128993; Medium', cls:'bm', border:'cm'},
+    low:    {badge:'&#128309; Low',    cls:'bl', border:'cl'},
+  };
+  const catIcon = {
+    'Payment/Financial': '&#128179;',
+    'Urgency/Tone':      '&#8987;',
+    'Identity/Domain':   '&#127760;',
+    'Process/Structure': '&#128203;',
+  };
+
+  grid.innerHTML = filtered.map(f => {
+    const s = sevMap[f.severity] || sevMap.medium;
+    return `
+<div class="glass-card rounded-xl p-4 ${s.border} space-y-2 hover:bg-white/[0.06] transition-colors">
+  <div class="flex items-start justify-between gap-2">
+    <div class="min-w-0">
+      <span class="text-[10px] text-slate-500 font-medium">${catIcon[f.category]||'&#9888;'}&nbsp;${esc(f.category)}</span>
+      <h4 class="text-sm font-bold text-slate-100 mt-0.5 leading-snug">${esc(f.label)}</h4>
+    </div>
+    <span class="shrink-0 text-[11px] px-2 py-0.5 rounded-full font-semibold ${s.cls}">${s.badge}</span>
+  </div>
+  <p class="text-xs text-slate-400 leading-relaxed">${esc(f.explanation)}</p>
+</div>`;
+  }).join('');
+}
+
+function filterFlags(cat) { renderFilteredFlags(cat); }
+
+function renderMissing(items) {
+  const section = document.getElementById('missingSection');
+  if (!items || !items.length) { section.classList.add('hidden'); return; }
+  section.classList.remove('hidden');
+  document.getElementById('missingGrid').innerHTML = items.map(i =>
+    `<span class="tag">+ ${esc(i)}</span>`
+  ).join('');
+}
+
+function renderAnomalyList(flags) {
+  const list = document.getElementById('anomalyList');
+  if (!flags || !flags.length) {
+    list.innerHTML = '<li class="text-slate-500 text-xs italic flex gap-2"><span class="cgd">&#10003;</span>No significant anomalies detected.</li>';
+    return;
+  }
+  list.innerHTML = flags.slice(0, 8).map(f =>
+    `<li class="flex items-start gap-2 text-sm text-slate-300"><span class="cbd flex-shrink-0 mt-0.5 font-bold">&#10007;</span>${esc(f.label)}</li>`
+  ).join('');
+}
+
+function renderDomain(results) {
+  document.getElementById('domainResults').innerHTML = results.map(r =>
+    `<div class="flex items-start gap-2 glass-card rounded-lg px-3 py-2 text-[11px]">${r.icon}&nbsp;<span class="leading-relaxed">${r.text}</span></div>`
+  ).join('');
+}
+
+function renderActions(score, flags) {
+  let actions;
+  if (score >= 66) {
+    actions = [
+      {i:'&#128683;', t:'Do NOT Send Money', d:'Do not wire funds, purchase gift cards, or return any deposited check under any circumstances. These losses are permanent and unrecoverable.', c:'border-red-500/25 bg-red-500/5'},
+      {i:'&#128269;', t:'Independently Verify the Company', d:"Search LinkedIn, BBB, and Glassdoor for the company. Find their official phone number on their real website and call HR to verify — never use numbers from this message.", c:'border-amber-500/25 bg-amber-500/5'},
+      {i:'&#128737;', t:'Report to Authorities', d:'File a complaint at FTC.gov/complaint and FBI IC3.gov. Your report is used to investigate and dismantle scam operations that target thousands of job seekers.', c:'border-blue-500/25 bg-blue-500/5'},
+    ];
+  } else if (score >= 31) {
+    actions = [
+      {i:'&#9888;', t:'Proceed with Caution', d:'Some elements are unclear. Do not provide personal or financial information until you have independently verified the company and confirmed this is a legitimate opening.', c:'border-amber-500/25 bg-amber-500/5'},
+      {i:'&#128222;', t:'Call HR to Verify', d:"Locate the company's official phone number on their website (not in this message) and call their HR department to confirm the offer letter is real before proceeding.", c:'border-cyan-500/25 bg-cyan-500/5'},
+      {i:'&#128279;', t:'Verify via LinkedIn', d:"Confirm the recruiter's LinkedIn profile shows them as a real employee. Look for this specific job posted on the company's official careers page.", c:'border-violet-500/25 bg-violet-500/5'},
+    ];
+  } else {
+    actions = [
+      {i:'&#10003;', t:'Appears Legitimate', d:'This offer follows standard corporate conventions. No major fraud indicators were detected. Still review all terms carefully and confirm via official channels before signing.', c:'border-emerald-500/25 bg-emerald-500/5'},
+      {i:'&#128203;', t:'Review Every Term', d:'Verify start date, salary, benefits schedule, and all contingencies (background check, drug test). Consider an employment attorney review for any unusual clauses.', c:'border-cyan-500/25 bg-cyan-500/5'},
+      {i:'&#128193;', t:'Preserve All Documentation', d:'Save all emails and documents in a dedicated folder. Use only the official DocuSign or HelloSign portal linked from the HR email domain to sign documents.', c:'border-slate-500/25 bg-slate-500/5'},
+    ];
+  }
+  document.getElementById('actionGrid').innerHTML = actions.map(a =>
+    `<div class="glass-card rounded-xl p-4 border ${a.c} space-y-2 hover:bg-white/[0.05] transition-colors">
+      <p class="text-3xl">${a.i}</p>
+      <h4 class="text-sm font-bold text-slate-100">${esc(a.t)}</h4>
+      <p class="text-xs text-slate-400 leading-relaxed">${esc(a.d)}</p>
+    </div>`
+  ).join('');
+}
+
+function esc(s) {
+  if (!s) return '';
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ──────────────────────────────────────────────────────────────
+// LOADING UI
+// ──────────────────────────────────────────────────────────────
+function setLoading(title, sub, step, pct) {
+  document.getElementById('loadingTitle').textContent = title;
+  document.getElementById('loadingSubtitle').textContent = sub;
+  if (step) document.getElementById('loadingStep').textContent = step;
+  if (pct) {
+    document.getElementById('loadingPct').textContent = pct + '%';
+    document.getElementById('loadingBar').style.width = pct + '%';
+  }
+}
+
+// ──────────────────────────────────────────────────────────────
+// COPY REPORT
+// ──────────────────────────────────────────────────────────────
+async function copyResults() {
+  if (!lastResult.finalScore && lastResult.finalScore !== 0) return;
+  const { finalScore, hBase, llmAdj, summary, flags, missing } = lastResult;
+  const risk = finalScore >= 66 ? 'HIGH RISK' : finalScore >= 31 ? 'MODERATE RISK' : 'LOW RISK';
+  let text = `PhishGuard Scan Report\n${'='.repeat(40)}\n`;
+  text += `Risk Level: ${risk}\nFinal Score: ${Math.round(finalScore)}%\n`;
+  text += `Heuristic Base: ${hBase}% | LLM Adjustment: ${llmAdj >= 0 ? '+' : ''}${llmAdj}\n\n`;
+  text += `Executive Summary:\n${summary}\n\n`;
+  if (flags.length) {
+    text += `Red Flags (${flags.length}):\n`;
+    flags.forEach(f => { text += `  [${f.severity.toUpperCase()}] ${f.label}\n  ${f.explanation}\n\n`; });
+  }
+  if (missing.length) {
+    text += `Missing Legitimate Elements:\n`;
+    missing.forEach(m => { text += `  - ${m}\n`; });
+  }
+  try {
+    await navigator.clipboard.writeText(text);
+    const btn = document.getElementById('copyResultsBtn');
+    btn.classList.add('copied');
+    btn.innerHTML = '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg> Copied!';
+    setTimeout(() => {
+      btn.classList.remove('copied');
+      btn.innerHTML = '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy Report';
+    }, 2500);
+  } catch(e) { console.warn('Clipboard write failed', e); }
+}
+
+// ──────────────────────────────────────────────────────────────
+// MAIN SCAN ORCHESTRATOR
+// ──────────────────────────────────────────────────────────────
+async function runScan() {
+  const offerText   = document.getElementById('offerText').value.trim();
+  const senderEmail = document.getElementById('senderEmail').value.trim();
+  const companyUrl  = document.getElementById('companyUrl').value.trim();
+  const apiKey      = document.getElementById('apiKey').value.trim();
+
+  if (!offerText) {
+    alert('Please paste an offer letter or email text to analyze.');
+    return;
+  }
+
+  const btn = document.getElementById('scanBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<div class="spinner"></div><span>Scanning...</span>';
+  document.getElementById('loadingSection').classList.remove('hidden');
+  document.getElementById('resultsSection').classList.add('hidden');
+  document.getElementById('fallbackNotice').classList.add('hidden');
+  document.getElementById('summaryBadge').classList.add('hidden');
+  document.getElementById('loadingSection').scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+  try {
+    // ── Step 1: Heuristic ────────────────────────────────────
+    setLoading('Running Heuristic Engine...', 'Scanning for 15+ fraud signature patterns', 'Step 1 of 3', 25);
+    await sleep(400);
+    const { rawHeuristicScore, triggers } = analyzeHeuristics(offerText);
+
+    // ── Step 2: Domain ───────────────────────────────────────
+    setLoading('Analyzing Domain & Sender Identity...', 'Levenshtein typosquatting check + provider lookup', 'Step 2 of 3', 55);
+    await sleep(350);
+    const domainResults = analyzeDomain(senderEmail, companyUrl);
+    const domainBonus = domainResults.filter(r => r.risk === 'high').length * 10;
+    const hBase = Math.min(100, rawHeuristicScore + domainBonus);
+
+    // ── Step 3: LLM ──────────────────────────────────────────
+    let llm = null, usedLLM = false;
+    if (apiKey) {
+      setLoading('AI Reasoning Engine Active...', 'Deep contextual analysis via Gemini 2.0 Flash', 'Step 3 of 3', 80);
+      try {
+        llm = await callGemini(offerText, senderEmail, companyUrl, apiKey);
+        usedLLM = true;
+      } catch (e) {
+        console.warn('LLM fallback activated:', e.message);
+      }
+    }
+
+    // ── Hybrid Score ─────────────────────────────────────────
+    const llmAdj = llm ? (Number(llm.llm_adjustment) || 0) : 0;
+    const finalScore = Math.max(0, Math.min(100, hBase + llmAdj));
+
+    // ── Merge flags (dedupe by explanation prefix) ────────────
+    const merged = [...triggers];
+    if (llm?.risk_factors?.length) {
+      for (const rf of llm.risk_factors) {
+        const key = (rf.explanation || '').slice(0, 30).toLowerCase();
+        const dup = merged.some(t => (t.explanation || '').slice(0, 30).toLowerCase() === key);
+        if (!dup) merged.push({
+          category: rf.category,
+          label: rf.category + ' Risk Factor',
+          explanation: rf.explanation,
+          severity: rf.severity || 'medium'
+        });
+      }
+    }
+
+    // ── Store for copy function ───────────────────────────────
+    const summary = llm?.overall_assessment || buildHeuristicSummary(finalScore, merged);
+    const missing = buildMissingList(llm, usedLLM, finalScore);
+    lastResult = { finalScore, hBase, llmAdj, summary, flags: merged, missing };
+
+    setLoading('Rendering Dashboard...', 'Building your threat intelligence report', 'Step 3 of 3', 95);
+    await sleep(250);
+
+    // ── Show results ─────────────────────────────────────────
+    document.getElementById('loadingSection').classList.add('hidden');
+    document.getElementById('resultsSection').classList.remove('hidden');
+
+    animateGauge(finalScore);
+
+    document.getElementById('heuristicScoreLabel').textContent = hBase + '%';
+    document.getElementById('hBarEl').style.width = hBase + '%';
+    document.getElementById('llmAdjLabel').textContent = usedLLM
+      ? (llmAdj >= 0 ? '+' : '') + llmAdj + ' (LLM)'
+      : 'N/A (no API key)';
+    document.getElementById('finalScoreLabel').textContent = Math.round(finalScore) + '%';
+
+    if (!usedLLM) document.getElementById('fallbackNotice').classList.remove('hidden');
+    if (usedLLM) document.getElementById('summaryBadge').classList.remove('hidden');
+
+    const sumEl = document.getElementById('executiveSummary');
+    sumEl.classList.remove('italic');
+    sumEl.textContent = summary;
+
+    renderDomain(domainResults);
+    renderFlags(merged);
+    renderMissing(missing);
+    renderAnomalyList(merged);
+    renderActions(finalScore, merged);
+
+    document.getElementById('resultsSection').scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+  } catch (e) {
+    console.error(e);
+    document.getElementById('loadingSection').classList.add('hidden');
+    alert('Unexpected error: ' + e.message);
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>&nbsp;&#9889; Scan for Threat Risk';
+  }
+}
+
+function buildHeuristicSummary(score, flags) {
+  if (score >= 66) {
+    const top = flags.slice(0, 2).map(f => f.label.toLowerCase()).join(' and ');
+    return `This document displays multiple high-confidence fraud indicators${top ? ', including ' + top : ''}. The pattern is consistent with a recruitment scam designed to extract money or personal data. Do not respond, do not send funds, and do not share personal information.`;
+  } else if (score >= 31) {
+    return 'This document contains several ambiguous or borderline elements that could not be definitively classified. Treat with caution: independently verify the company and position through official channels before responding or sharing any personal information.';
+  } else {
+    return 'This document follows the conventions of a standard corporate offer letter. No major fraud indicators were detected by the heuristic engine. Review all contractual terms carefully and verify authenticity through official company channels before signing.';
+  }
+}
+
+function buildMissingList(llm, usedLLM, score) {
+  const items = llm?.missing_legitimate_elements ? [...llm.missing_legitimate_elements] : [];
+  if (!usedLLM && score >= 35) {
+    const defaults = [
+      'Official company-domain email address (hr@company.com)',
+      'Named HR contact with verifiable direct phone number',
+      'Reference to a prior interview or screening process',
+      'Specific job description with responsibilities',
+      'Full benefits package and compensation details',
+      'Formal signing portal (DocuSign or similar)',
+    ];
+    for (const d of defaults) if (!items.includes(d)) items.push(d);
+  }
+  return items;
+}
+
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+</script>
+</body>
+</html>
