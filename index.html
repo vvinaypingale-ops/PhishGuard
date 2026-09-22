@@ -85,9 +85,6 @@ textarea::placeholder,input::placeholder{color:rgba(148,163,184,.45)}
 .fb-off{background:transparent;color:#64748b;border:1px solid transparent}
 .fb-off:hover{background:rgba(255,255,255,.06);color:#94a3b8}
 
-/* API key section */
-.api-sec{background:rgba(139,92,246,.07);border:1px solid rgba(139,92,246,.22)}
-
 /* Scrollbar */
 ::-webkit-scrollbar{width:6px}
 ::-webkit-scrollbar-track{background:rgba(255,255,255,.02)}
@@ -203,28 +200,6 @@ textarea::placeholder,input::placeholder{color:rgba(148,163,184,.45)}
     </div>
   </div>
 
-  <div class="api-sec rounded-xl p-4 space-y-2">
-    <div class="flex items-center justify-between">
-      <label class="flex items-center gap-1.5 text-xs font-bold text-violet-300">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>
-        Google Gemini API Key
-        <span class="font-normal text-violet-400/80 ml-1">(optional — enables AI reasoning)</span>
-      </label>
-      <span id="keySavedBadge" class="hidden text-[10px] font-semibold text-emerald-400 bg-emerald-500/15 border border-emerald-500/30 rounded-full px-2.5 py-0.5">
-        ✓ Saved in browser
-      </span>
-    </div>
-    <div class="relative flex items-center">
-      <input id="apiKey" type="password" oninput="handleKeyInput(this.value)" placeholder="AIza..." class="w-full rounded-lg px-3 py-2 text-sm pr-20"/>
-      <button type="button" id="toggleKeyBtn" onclick="toggleKeyVisibility()" class="absolute right-2 text-xs text-slate-400 hover:text-slate-200 glass rounded px-2.5 py-1 cursor-pointer">
-        👁️ Show
-      </button>
-    </div>
-    <p class="text-[11px] text-slate-400 leading-normal">
-      Saved locally in your browser. Without a key, the Heuristic Engine provides threat analysis. Get a free key at <a href="https://aistudio.google.com" target="_blank" class="text-violet-400 underline decoration-dotted font-medium">aistudio.google.com</a>
-    </p>
-  </div>
-
   <button id="scanBtn" onclick="runScan()"
     class="btn-glow w-full rounded-xl py-4 text-base font-bold text-white flex items-center justify-center gap-2.5 cursor-pointer">
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
@@ -315,7 +290,7 @@ textarea::placeholder,input::placeholder{color:rgba(148,163,184,.45)}
       <!-- Fallback notice -->
       <div id="fallbackNotice" class="hidden w-full rounded-xl p-2.5 text-xs text-amber-400 flex items-center gap-2" style="background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.2)">
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="flex-shrink-0"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/></svg>
-        <span>Running in heuristic-only mode. Add a Gemini API key for deep forensic reasoning.</span>
+        <span>Running in fast Heuristic Threat Engine mode.</span>
       </div>
     </div>
 
@@ -469,46 +444,6 @@ textarea::placeholder,input::placeholder{color:rgba(148,163,184,.45)}
 ════════════════════════════════════════════════════════════ -->
 <script>
 'use strict';
-
-// ──────────────────────────────────────────────────────────────
-// INIT & LOCAL STORAGE PERSISTENCE
-// ──────────────────────────────────────────────────────────────
-window.addEventListener('DOMContentLoaded', () => {
-  const savedKey = localStorage.getItem('phishguard_gemini_key');
-  if (savedKey) {
-    document.getElementById('apiKey').value = savedKey;
-    updateKeyBadge(true);
-  }
-});
-
-function handleKeyInput(val) {
-  if (val.trim()) {
-    localStorage.setItem('phishguard_gemini_key', val.trim());
-    updateKeyBadge(true);
-  } else {
-    localStorage.removeItem('phishguard_gemini_key');
-    updateKeyBadge(false);
-  }
-}
-
-function toggleKeyVisibility() {
-  const input = document.getElementById('apiKey');
-  const btn = document.getElementById('toggleKeyBtn');
-  if (input.type === 'password') {
-    input.type = 'text';
-    btn.innerHTML = '🙈 Hide';
-  } else {
-    input.type = 'password';
-    btn.innerHTML = '👁️ Show';
-  }
-}
-
-function updateKeyBadge(isSaved) {
-  const badge = document.getElementById('keySavedBadge');
-  if (badge) {
-    badge.classList.toggle('hidden', !isSaved);
-  }
-}
 
 // ──────────────────────────────────────────────────────────────
 // MODULE 2: HEURISTIC ENGINE
@@ -1062,7 +997,7 @@ async function runScan() {
   const offerText   = document.getElementById('offerText').value.trim();
   const senderEmail = document.getElementById('senderEmail').value.trim();
   const companyUrl  = document.getElementById('companyUrl').value.trim();
-  const apiKey      = document.getElementById('apiKey').value.trim();
+  const apiKey      = (localStorage.getItem('phishguard_gemini_key') || window.GEMINI_API_KEY || '').trim();
 
   if (!offerText) {
     alert('Please paste an offer letter or email text to analyze.');
@@ -1102,10 +1037,6 @@ async function runScan() {
         usedLLM = true;
       } catch (e) {
         console.warn('LLM call error:', e.message);
-        // Display user-friendly notification if key fails
-        const fallbackEl = document.getElementById('fallbackNotice');
-        fallbackEl.classList.remove('hidden');
-        fallbackEl.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="flex-shrink-0"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/></svg><span>API key error (${esc(e.message)}). Falling back to Heuristic Threat Engine.</span>`;
       }
     }
 
@@ -1172,10 +1103,10 @@ async function runScan() {
     document.getElementById('hBarEl').style.width = hBase + '%';
     document.getElementById('llmAdjLabel').textContent = usedLLM
       ? (llmAdj >= 0 ? '+' : '') + llmAdj + ' (LLM)'
-      : 'N/A (no API key)';
+      : 'N/A (Heuristic mode)';
     document.getElementById('finalScoreLabel').textContent = Math.round(finalScore) + '%';
 
-    if (!usedLLM && !apiKey) document.getElementById('fallbackNotice').classList.remove('hidden');
+    if (!usedLLM) document.getElementById('fallbackNotice').classList.remove('hidden');
     if (usedLLM) {
       document.getElementById('summaryBadge').classList.remove('hidden');
       if (llm?.confidence) {
