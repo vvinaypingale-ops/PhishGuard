@@ -40,16 +40,6 @@ body{background:#0a0f1e;font-family:'Inter',system-ui,sans-serif;color:#e2e8f0;p
 .btn-glow:active{transform:translateY(0)}
 .btn-glow:disabled{opacity:.55;cursor:not-allowed;transform:none;box-shadow:none}
 
-/* Preset buttons */
-.pbtn{transition:all .25s ease;position:relative;overflow:hidden}
-.pbtn:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,0,0,.3)}
-.pbtn-r{background:rgba(239,68,68,.13);border:1px solid rgba(239,68,68,.38)}
-.pbtn-r:hover{background:rgba(239,68,68,.22);border-color:rgba(239,68,68,.6)}
-.pbtn-g{background:rgba(16,185,129,.13);border:1px solid rgba(16,185,129,.38)}
-.pbtn-g:hover{background:rgba(16,185,129,.22);border-color:rgba(16,185,129,.6)}
-.pbtn-a{background:rgba(245,158,11,.13);border:1px solid rgba(245,158,11,.38)}
-.pbtn-a:hover{background:rgba(245,158,11,.22);border-color:rgba(245,158,11,.6)}
-
 /* Gauge */
 #gauge-svg .gauge-bg{stroke:rgba(255,255,255,.07)}
 #gauge-svg .gauge-fill{stroke-linecap:round;transition:stroke-dashoffset 1.4s cubic-bezier(.4,0,.2,1),stroke .6s ease}
@@ -184,28 +174,6 @@ textarea::placeholder,input::placeholder{color:rgba(148,163,184,.45)}
      MAIN CONTENT
 ════════════════════════════════════════════════════════════ -->
 <main class="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 pb-20 space-y-5">
-
-<!-- PRESET BAR -->
-<div class="glass rounded-2xl p-4 sm:p-5">
-  <div class="flex items-center gap-2 mb-3">
-    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#06b6d4" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-    <p class="text-xs font-bold uppercase tracking-widest text-slate-400">Quick Demo Presets — Click to load instantly</p>
-  </div>
-  <div class="flex flex-wrap gap-3">
-    <button onclick="loadPreset('scam')" class="pbtn pbtn-r rounded-xl px-4 py-2.5 text-sm font-semibold text-red-300 flex items-center gap-2 cursor-pointer">
-      &#128308; Load Scam Offer
-      <span class="text-[11px] font-normal opacity-60">Equipment deposit scam</span>
-    </button>
-    <button onclick="loadPreset('legit')" class="pbtn pbtn-g rounded-xl px-4 py-2.5 text-sm font-semibold text-emerald-300 flex items-center gap-2 cursor-pointer">
-      &#128994; Load Legitimate Offer
-      <span class="text-[11px] font-normal opacity-60">Corporate HR letter</span>
-    </button>
-    <button onclick="loadPreset('borderline')" class="pbtn pbtn-a rounded-xl px-4 py-2.5 text-sm font-semibold text-amber-300 flex items-center gap-2 cursor-pointer">
-      &#128993; Load Borderline Offer
-      <span class="text-[11px] font-normal opacity-60">Ambiguous remote gig</span>
-    </button>
-  </div>
-</div>
 
 <!-- INPUT FORM -->
 <div class="glass-s rounded-2xl p-6 space-y-5">
@@ -355,7 +323,7 @@ textarea::placeholder,input::placeholder{color:rgba(148,163,184,.45)}
       <!-- Domain Analysis -->
       <div>
         <div class="flex items-center gap-1.5 mb-2">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#06b6d4" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#06b6d4" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1 4-10z"/></svg>
           <span class="text-[10px] font-bold uppercase tracking-widest text-slate-500">Domain &amp; Sender Verification</span>
         </div>
         <div id="domainResults" class="space-y-2 text-xs text-slate-300"></div>
@@ -363,7 +331,7 @@ textarea::placeholder,input::placeholder{color:rgba(148,163,184,.45)}
     </div>
   </div>
 
-  <!-- Row 2: AI Forensic Reasoning Trace & Delta Card (New Feature) -->
+  <!-- Row 2: AI Forensic Reasoning Trace & Delta Card -->
   <div id="reasoningSection" class="hidden glass-s rounded-2xl p-6 reveal rd1 space-y-4" style="background:rgba(139,92,246,.06);border:1px solid rgba(139,92,246,.25)">
     <div class="flex items-center gap-2">
       <div class="w-7 h-7 rounded-lg bg-violet-500/20 flex items-center justify-center text-violet-300">
@@ -489,98 +457,6 @@ textarea::placeholder,input::placeholder{color:rgba(148,163,184,.45)}
 ════════════════════════════════════════════════════════════ -->
 <script>
 'use strict';
-
-// ──────────────────────────────────────────────────────────────
-// PRESET DATA (Calibration Test Cases)
-// ──────────────────────────────────────────────────────────────
-const PRESETS = {
-  scam: {
-    text: `CONGRATULATIONS! You Have Been Selected!
-
-We are excited to inform you that you have been selected for the position of Remote Data Entry Specialist at Digital Solutions Inc.
-
-This is a WORK FROM HOME position paying $85/hr with no experience required.
-
-TO GET STARTED IMMEDIATELY:
-We will mail you a company check for $2,500 to purchase your home office equipment from our approved vendor list. Once you receive the check, you must deposit it and IMMEDIATELY send $500 via Zelle or gift card (Amazon/Google Play) to our equipment coordinator to reserve your workstation kit. This must be done within 24 hours or your position will be forfeited.
-
-No formal interview is required. You have already been pre-screened via LinkedIn.
-
-URGENT: Reply to this email IMMEDIATELY with your full name, home address, and bank account details so we can process your paperwork and mail the check today. Do not delay — we have 3 other candidates waiting.
-
-Contact: hr.digitalsolutions@gmail.com`,
-    email: 'hr.digitalsolutions@gmail.com',
-    url: ''
-  },
-  legit: {
-    text: `Dear Ms. Johnson,
-
-We are delighted to extend an offer of employment for the position of Software Engineer II at Acme Corporation.
-
-Position Details:
-- Title: Software Engineer II (Full-time, Exempt)
-- Department: Platform Engineering
-- Start Date: October 14, 2026
-- Annual Base Salary: $95,000, paid bi-weekly
-- Reporting Manager: David Chen, Engineering Manager
-
-Benefits Summary:
-- Comprehensive health, dental, and vision insurance (effective Day 1)
-- 401(k) with 4% company match
-- 20 days PTO + 10 federal holidays
-- $2,500 annual learning and development stipend
-- Flexible hybrid schedule (3 days in office, 2 remote)
-
-This offer is contingent upon successful completion of a standard background check and reference verification, which our People Operations team will initiate separately.
-
-Please review your formal offer packet and sign via our DocuSign portal by Friday, September 26th. If you have any questions, contact our HR Business Partner:
-
-Sarah Mitchell, SHRM-CP
-Senior HR Business Partner
-sarah.mitchell@acme.com | Direct: (415) 555-0192
-Office: 350 Market Street, San Francisco, CA 94105
-
-We look forward to welcoming you to the Acme team!
-
-Sincerely,
-David Chen, Engineering Manager
-Acme Corporation | acme.com`,
-    email: 'sarah.mitchell@acme.com',
-    url: 'https://acme.com'
-  },
-  borderline: {
-    text: `URGENT HIRING — Online Product Reviewers Needed!
-
-We are looking for motivated individuals to work from home reviewing products on major e-commerce platforms.
-
-Position: Online Product Reviewer / Evaluator
-Pay: $50/hour | Work just 2-3 hours per day
-Start: Immediately | No interview required
-
-What you'll do:
-- Browse and rate products on Amazon, Walmart, eBay
-- Submit short written reviews from your phone or computer
-- Receive payment weekly via PayPal or Venmo
-
-Requirements: Must have a smartphone and internet access. No experience necessary.
-
-TO APPLY: Click the Telegram link below and message us with INTERESTED:
-t.me/ProductReviewerJobs2026
-
-Spots are filling up fast! We only have 12 openings remaining this week.`,
-    email: '',
-    url: 't.me/ProductReviewerJobs2026'
-  }
-};
-
-function loadPreset(type) {
-  const p = PRESETS[type];
-  if (!p) return;
-  document.getElementById('offerText').value = p.text;
-  document.getElementById('senderEmail').value = p.email;
-  document.getElementById('companyUrl').value = p.url;
-  document.getElementById('offerText').scrollIntoView({ behavior: 'smooth', block: 'center' });
-}
 
 // ──────────────────────────────────────────────────────────────
 // MODULE 2: HEURISTIC ENGINE
